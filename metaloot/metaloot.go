@@ -40,12 +40,13 @@ func Metaloot(basedir string, uri string) error {
 		return err
 	}
 	lines := strings.Split(string(b), "\n")
+	lineSeen := false
 	for _, line := range lines {
 
 		if line == "" || strings.Contains(line, " ") {
 			continue // spaces cause a resource unavailable error
 		}
-
+		lineSeen = true
 		if err := Metaloot(basedir, uri+"/"+line); err != nil {
 			log.Println(err.Error())
 			log.Println("PATH FRAGMENT: ", u.Path)
@@ -57,6 +58,15 @@ func Metaloot(basedir string, uri string) error {
 			}
 		}
 	}
+	if !lineSeen {
+		filename := filepath.Join(basedir, u.Path)
+		mkdirP(filename)
+		if err := ioutil.WriteFile(filename, b, os.FileMode(int(0600))); err != nil {
+			log.Println(err.Error())
+			return err
+		}
+	}
+
 	log.Println("No more lines in", uri)
 	return nil
 }
