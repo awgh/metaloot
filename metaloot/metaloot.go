@@ -1,52 +1,62 @@
 package metaloot
 
 import (
-	"bufio"
-	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-// Metaloot - another name for pirate treasure
-func Metaloot(basedir string, uri string) {
+func mkdirP(fileName string) {
+	dirName := filepath.Dir(fileName)
+	if _, serr := os.Stat(dirName); serr != nil {
+		if err := os.MkdirAll(dirName, os.ModePerm); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
 
+// Metaloot - another name for pirate treasure
+func Metaloot(basedir string, uri string) error {
+	log.Println("Metaloot called: ", basedir, uri)
 	resp, err := http.Get(uri)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("%d: %s", resp.StatusCode, resp.Status)
 	}
 	defer resp.Body.Close()
-
 	u, err := url.Parse(uri)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
-	filename := filepath.Join(basedir, u.Path)
-	ioutil.WriteFile(filename, b, os.FileMode(int(0600)))
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
+	lines := strings.Split(string(b), "\n")
+	for _, line := range lines {
 
-	r := bufio.NewReader(bytes.NewReader(b))
-	more := true
-	for more {
-		var line []byte
-		line, more, err = r.ReadLine()
-		if err != nil {
-			log.Println(err.Error())
-			return
+		if line == "" || strings.Contains(line, " ") {
+			continue // spaces cause a resource unavailable error
 		}
-		Metaloot(basedir, uri+"/"+string(line))
+
+		if err := Metaloot(basedir, uri+"/"+line); err != nil {
+			log.Println(err.Error())
+			log.Println("PATH FRAGMENT: ", u.Path)
+			filename := filepath.Join(basedir, u.Path)
+			mkdirP(filename)
+			if err := ioutil.WriteFile(filename, b, os.FileMode(int(0600))); err != nil {
+				log.Println(err.Error())
+				return err
+			}
+		}
 	}
+	log.Println("No more lines in", uri)
+	return nil
 }

@@ -20,5 +20,7 @@ func main() {
 		log.Println(parser.Usage(err))
 		return
 	}
-	metaloot.Metaloot(*basedir, "http://169.254.169.254")
+	if err := metaloot.Metaloot(*basedir, "http://169.254.169.254"); err != nil {
+		log.Println(err.Error())
+	}
 }
