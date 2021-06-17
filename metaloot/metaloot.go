@@ -40,10 +40,11 @@ func Metaloot(basedir string, uri string) error {
 		return err
 	}
 	lines := strings.Split(string(b), "\n")
+	log.Println("Lines Read:", lines)
 	lineSeen := false
 	for _, line := range lines {
 
-		if line == "" || strings.Contains(line, " ") {
+		if line == "" || strings.Contains(line, " ") || line == "</html>" || line == "<html>" {
 			continue // spaces cause a resource unavailable error
 		}
 		lineSeen = true
