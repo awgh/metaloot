@@ -47,6 +47,9 @@ func Metaloot(basedir string, uri string) error {
 		if line == "" || strings.Contains(line, " ") || line == "</html>" || line == "<html>" {
 			continue // spaces cause a resource unavailable error
 		}
+		if strings.HasPrefix(line, "#!") {
+			break // shebang means this is a shell script, just log it and don't recurse
+		}
 		lineSeen = true
 		if err := Metaloot(basedir, uri+"/"+line); err != nil {
 			log.Println(err.Error())
