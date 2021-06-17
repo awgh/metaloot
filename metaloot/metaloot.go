@@ -44,11 +44,14 @@ func Metaloot(basedir string, uri string) error {
 	lineSeen := false
 	for _, line := range lines {
 
-		if line == "" || strings.Contains(line, " ") || line == "</html>" || line == "<html>" {
+		if line == "" || strings.Contains(line, " ") {
 			continue // spaces cause a resource unavailable error
 		}
 		if strings.HasPrefix(line, "#!") {
 			break // shebang means this is a shell script, just log it and don't recurse
+		}
+		if strings.Contains(line, "404 - Not Found") { // AWS now returns status 200 and 404 as a web page. Tricky.
+			return fmt.Errorf("%d: %s", 404, "Not Found")
 		}
 		lineSeen = true
 		if err := Metaloot(basedir, uri+"/"+line); err != nil {
