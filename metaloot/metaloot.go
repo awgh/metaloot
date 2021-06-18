@@ -50,7 +50,7 @@ func Metaloot(basedir string, uri string) error {
 		if strings.HasPrefix(line, "#!") {
 			break // shebang means this is a shell script, just log it and don't recurse
 		}
-		if strings.Contains(line, "404 - Not Found") { // AWS now returns status 200 and 404 as a web page. Tricky.
+		if line == "</html>" { // AWS now returns status 200 and 404 as a web page. Tricky.
 			return fmt.Errorf("%d: %s", 404, "Not Found")
 		}
 		lineSeen = true
